@@ -50,8 +50,32 @@ def main():
         "from": my_address,
         "nonce": nonce
     })
-    signed_txn = web3.eth.Account.sign_transaction(transaction, private_key=private_key)
+    signed_txn = w3.eth.account.sign_transaction(transaction, private_key=private_key)
+
+    print("Deploying Contract!")
     tx_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction)
+
+    print("Waiting for transaction to finish...")
+    tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
+    print(f"Done! Contract deployed to {tx_receipt.contractAddress}")
+
+    # Working with deployed Contracts
+    smple_storage = w3.eth.contract(address=tx_receipt.contractAddress, abi=abi)
+    print(f"Initial store value: {smple_storage.functions.retrieve().call()}")
+    change_favorite_num = smple_storage.functions.store(1488).buildTransaction({
+        "chainId": chain_id,
+        "gasPrice": w3.eth.gas_price,
+        "from": my_address,
+        "nonce": nonce + 1,
+    })
+    signed_change_favnum = w3.eth.account.sign_transaction(
+        change_favorite_num, private_key=private_key
+    )
+    ch_hash = w3.eth.send_raw_transaction(signed_change_favnum.rawTransaction)
+    print("Updating stored Value...")
+    ch_receipt = w3.eth.wait_for_transaction_receipt(ch_hash)
+
+    print(smple_storage.functions.retrieve().call())
 
 
 if __name__ == "__main__":
